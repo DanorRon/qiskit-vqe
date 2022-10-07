@@ -1,5 +1,5 @@
 import numpy as np
-from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
+from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister, execute
 from qiskit import IBMQ, Aer, BasicAer
 from qiskit.compiler import transpile
 from qiskit.quantum_info.operators import Operator, Pauli
@@ -49,12 +49,15 @@ class VQE:
             #circuit.barrier()
         return circuit
 
-    def evaluate(self, circuit, backend):
-        measured_circuit = circuit.measure_all(add_bits=False, inplace=False) #different from circuit.measure([0,1], [0,1])?
-        compiled = transpile(measured_circuit, backend)
-        job = backend.run(compiled, shots=self.shots)
+    def evaluate(self, circuits, backend):
+        measured_circuits = []
+        for i in range(len(circuits)):
+            circuit = circuits[i]
+            measured_circuit = circuit.measure_all(add_bits=False, inplace=False) #different from circuit.measure([0,1], [0,1])?
+            measured_circuits.append(measured_circuit)
+        job = execute(measured_circuits, backend, shots=self.shots)
         result = job.result()
-        counts = result.get_counts(compiled)
+        counts = result.get_counts()
         return counts
 
     def bit_parity(self, substr):
@@ -62,12 +65,17 @@ class VQE:
         return parity
 
     def get_EV(self, circuit, backend):
-        counts = self.evaluate(circuit, backend)
+        num_qubits = circuit.num_qubits #number of qubits
+        circuit_h = circuit.copy()
+        for i in range(num_qubits):
+            circuit_h.h(i)
+        counts = self.evaluate([circuit, circuit_h], backend)
+        counts_z = counts[0]
+        counts_x = counts[1]
         op_z = 0
         op_zz = 0
-        num_qubits = circuit.num_qubits #number of qubits
-        for bitstr in counts:
-            p = counts[bitstr]/self.shots #probability of getting bitstr
+        for bitstr in counts_z:
+            p = counts_z[bitstr]/self.shots #probability of getting bitstr
             for index in range(num_qubits): #single values
                 substr = bitstr[index] #one number, 0 or 1
                 parity = self.bit_parity(substr)
@@ -77,12 +85,9 @@ class VQE:
                 parity = self.bit_parity(substr)
                 op_zz += p * parity
 
-        for i in range(num_qubits):
-            circuit.h(i)
-        counts = self.evaluate(circuit, backend)
         op_x = 0
-        for bitstr in counts:
-            p = counts[bitstr]/self.shots
+        for bitstr in counts_x:
+            p = counts_x[bitstr]/self.shots
             for index in range(num_qubits):
                 substr = bitstr[index]
                 parity = self.bit_parity(substr)

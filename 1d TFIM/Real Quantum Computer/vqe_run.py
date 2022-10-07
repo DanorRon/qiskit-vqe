@@ -1,9 +1,17 @@
 import qiskit
-from qiskit import Aer
+from qiskit import Aer, IBMQ, QuantumCircuit
 import vqe_functions
 from vqe_functions import VQE
 
-backend = Aer.get_backend('aer_simulator')
+#backend = Aer.get_backend('aer_simulator')
+
+#IBMQ.save_account('fb3e08528d7c6638591c88e8a957996475aea67811f7dee0916862a946430748a2791e32a01f89e7e3d7fe7030855562e3bafa9014591b9ea50eeadb220858f3')
+provider = IBMQ.load_account()
+#print(IBMQ.providers())
+#provider = IBMQ.get_provider(hub='ibm-q', group='open', project='main')
+#print(provider.backends())
+backend = provider.get_backend('ibmq_manila')
+
 
 num_qubits = 3
 layers = 5
