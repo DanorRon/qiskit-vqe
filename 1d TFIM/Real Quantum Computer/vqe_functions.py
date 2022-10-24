@@ -98,7 +98,6 @@ class VQE:
 
     def optimize(self, loss, initial_thetas): #expected value is loss function
         spsa = SPSA(maxiter=self.maxiter)
-        #spsa.set_max_evals_grouped(2)
         solution = spsa.minimize(fun=loss, x0=initial_thetas)
         return solution
 
@@ -106,16 +105,3 @@ class VQE:
             circuit = self.ansatz(thetas)
             loss = self.get_EV(circuit, self.backend)
             return loss
-
-    #def loss(self, thetas):
-    #    print(thetas.shape)
-    #    if thetas.shape==(2, 20):
-    #        circuit1 = self.ansatz(thetas[0]) #circuit of first point in batch (each batch needs to evaluate 2 perturbations of the parameters)
-    #        circuit2 = self.ansatz(thetas[1])
-    #        loss1 = self.get_EV(circuit1, self.backend)
-    #        loss2 = self.get_EV(circuit2, self.backend)
-    #        return np.array([loss1, loss2]) #returned as an ndarray so _batch_evaluate in SPSA can convert it into a list
-    #    else:
-    #        circuit = self.ansatz(thetas)
-    #        loss = self.get_EV(circuit, self.backend)
-    #        return loss
